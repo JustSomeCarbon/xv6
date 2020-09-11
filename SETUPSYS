@@ -1,0 +1,2 @@
+make qemu-nox-gdb
+gdb -q -iex "set auto-load safe-path /home/ngarcia/xv6-public/.gdbinit"
