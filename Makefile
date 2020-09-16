@@ -182,6 +182,9 @@ UPROGS=\
 	_wc\
 	_ps\
 	_zombie\
+    _lab2test\
+#    _get_priority\
+#    _set_priority\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)

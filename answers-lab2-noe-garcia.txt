@@ -1,0 +1,44 @@
+
+Each file modified:
+proc.c::
+  I added a function process to the file that returns the given process structure
+  when given a integer PID as input, and, if the function does not find the process
+  structure associated with the given PID, the function exits from its process.
+  Also added the process struct priority initialization under the allocproc() function
+  and set each unused process priority to 20. Within the fork() function I added the
+  process initialization priority to also be set to 20 for all processes being created.
+
+exec.c::
+  added that when a process is initialized through exec() the process priority is set
+  to 3, as to have a higher priority than other processes. The line is currently
+  commented out as to have all processes initialized with priority 20.
+
+defs.h::
+  added the findprocess() funciton to the proc.c prototypes. also added two prototype
+  functions for the get and set priority functionality. although i was unable to get
+  the files to function properly they are not necessary.
+
+proc.h::
+  added the priority feild to the process structure as an integer called pnice.
+
+user.h::
+  added get_priority(int) and set_priority(int, int) to the list of system calls.
+
+syscall.c::
+  added external integer prototypes for get and set priority functions, and added
+  both to the integer array conatining all the systemcall integers. Task 1 is also
+  included bellow but is commented out. The callnames[] array contains the system call
+  names in string format so they are able to be printed to the shell.
+
+syscall.h::
+  added the systemcall definition numbers for get and set priority.
+
+usys.S::
+  defined systemcall names for both get and set priority functions.
+
+sysproc.c::
+  implemented the sytemcall process functions at the bottom of the file. Both get and
+  set priority functions return -1 on error or 0 on success.
+
+Makefile::
+  added the lab2test file to the list of UPROGS (user programs).

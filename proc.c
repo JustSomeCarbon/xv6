@@ -88,6 +88,9 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  // initialize priority
+  // priority is set to standard 20
+  p->pnice = 20;
 
   release(&ptable.lock);
 
@@ -199,6 +202,9 @@ fork(void)
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
+  // set new process priority
+  // set to standard 20
+  np->pnice = 20;
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -319,6 +325,7 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
+// Scheduler -- Round Robbin Algorithm
 void
 scheduler(void)
 {
@@ -343,6 +350,8 @@ scheduler(void)
       switchuvm(p);
       p->state = RUNNING;
 
+      // save the current registers in cpu->scheduler
+      // (which points to a struct context)
       swtch(&(c->scheduler), p->context);
       switchkvm();
 
@@ -533,7 +542,7 @@ procdump(void)
   }
 }
 
-// prints current process status
+// prints current process and its status
 int
 cps()
 {
@@ -542,15 +551,38 @@ cps()
 	sti();
 	//Loop over process table looking for process with pid
 	acquire(&ptable.lock);
-	cprintf("name \t pid \t state \t \n");
+	cprintf("name \t pid \t state \t \t nice \t \n");
 	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++){
 		if (p->state == SLEEPING)
-			cprintf("%s \t %d \t SLEEPING \t \n", p->name, p->pid);
+			cprintf("%s \t %d \t SLEEPING \t %d \t \n", p->name, p->pid, p->pnice);
 		else if (p->state == RUNNING)
-			cprintf("%s \t %d \t RUNNING \t \n", p->name, p->pid);
+			cprintf("%s \t %d \t RUNNING \t %d \t \n", p->name, p->pid, p->pnice);
 		else if (p->state == RUNNABLE)
-			cprintf("%s \t %d \t RUNNABLE \t \n", p->name, p->pid);
+			cprintf("%s \t %d \t RUNNABLE \t %d \t \n", p->name, p->pid, p->pnice);
 	}
 	release(&ptable.lock);
 	return 22;
+}
+
+
+struct proc*
+findprocess(int pid)
+{
+  // processes to hold sought information
+  struct proc *p;
+  struct proc *a = (void *) 0;
+
+  // unlock 
+  acquire(&ptable.lock);
+  // look for the proccess within the process table
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if (pid == p->pid)
+      a = p;
+  }
+  // release acquired lock
+  release(&ptable.lock);
+  if (a == (void *)0)
+    exit();
+
+  return a;
 }

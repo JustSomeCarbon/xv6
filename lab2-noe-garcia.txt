@@ -1,0 +1,19 @@
+Estimated time 14:00 hours
+
+        start     time    Lab   work
+Date    time     spent   part   done
+------------------------------------------------------
+10/9    4:00     2:00     1    worked on completing task 1. reading through lab files
+11/9    1:00     3:00     2    added nice, and process find function
+13/9    12:00    3:00     3    added set and get functions, made bug fixes
+14/9    1:00     2:00     4    created and installed lab2test.c. minor bug fixes
+--------------------
+TOTAL time
+Spent on lab     10:00 hours
+
+The most difficult part of the lab was figuring out what peice of the os did what.
+It took some time to read through the code and follow just how processes were initialized
+and executed by the os, and where it would be appropriate to place the systemcall code.
+I had initially placed the code in the sysproc.c file, but eventually wanted to move the
+code to its own file, unfortunately i was unable to complete the process without breaking
+the os before the deadline.

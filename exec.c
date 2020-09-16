@@ -99,6 +99,10 @@ exec(char *path, char **argv)
   curproc->sz = sz;
   curproc->tf->eip = elf.entry;  // main
   curproc->tf->esp = sp;
+  // task loaded through exec have higher priority
+  // for lab2 we it does not specify to have higher
+  // priority processes so we will leave this out
+  //curproc->pnice = 3;
   switchuvm(curproc);
   freevm(oldpgdir);
   return 0;
