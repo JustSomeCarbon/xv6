@@ -576,8 +576,10 @@ findprocess(int pid)
   }
   // release the acquired lock
   release(&ptable.lock);
-  if (a == (void*) 0)
+  if (a == (void*) 0) {
+    cprintf("process %d not found\n", pid);
     exit();
+  }
 
   return a;
 }
