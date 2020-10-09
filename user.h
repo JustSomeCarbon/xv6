@@ -24,7 +24,7 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int cps(void);
-struct proc* findprocess(int pid);
+int set_nice(void);
 
 // ulib.c
 int stat(const char*, struct stat*);

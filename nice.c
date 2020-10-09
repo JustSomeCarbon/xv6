@@ -15,6 +15,12 @@ main(int argc, char* argv[])
   pid = atoi(argv[0]);
   nice = atoi(argv[1]);
   // set the nice value
-  n = set_nice(pid, nice);
+  int n = set_nice(pid, nice);
+  if (nice == 0) {
+    printf(2, "process %d set to %d\n", pid, nice);
+  } else {
+    printf(1, "unable to find process %d\n", pid);
+  }
+  
   exit();
 }
