@@ -90,9 +90,39 @@ sys_uptime(void)
   return xticks;
 }
 
-// things
+// print current system processes to the terminal
 int
 sys_cps(void)
 {
 	return cps();
 }
+
+
+// set the given process priority to the given priority
+int
+sys_set_nice(void)
+{
+  int pid, ni;
+  // check pid and priority were passed
+  // if not return -1
+  if (argint(0, &pid) < 0)
+    return -1;
+
+  if (argint(1, &ni) < 0)
+    return -1;
+
+  //check priority is within accepted range
+  if (ni < 0)
+    ni = 0;
+
+  if (ni > 39)
+    ni = 39;
+
+  // find the process of the given pid
+  struct proc* p = findprocess(pid);
+  // set the new priority of the process
+  p->nice = ni;
+  return 0;
+}
+
+

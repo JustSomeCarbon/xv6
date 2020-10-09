@@ -558,3 +558,26 @@ cps()
 	release(&ptable.lock);
 	return 22;
 }
+
+// finds the process struct of the given pid
+struct proc*
+findprocess(int pid)
+{
+  // process to hold final information
+  struct proc* p;
+  struct proc* a = (void *) 0;
+
+  // unlock table
+  acquire(&ptable.lock);
+  // look for the process within the process table
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if (pid == p->pid)
+      a = p;
+  }
+  // release the acquired lock
+  release(&ptable.lock);
+  if (a == (void*) 0)
+    exit();
+
+  return a;
+}
