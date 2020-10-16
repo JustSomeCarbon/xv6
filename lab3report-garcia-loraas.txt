@@ -1,0 +1,39 @@
+Task 1 output::
+
+name     pid     state           priority
+init     1       SLEEPING        20
+sh       2       SLEEPING        20
+ps       3       RUNNING         20
+
+Task 2 output::
+
+$ lab3test 4 &
+PCarehnti l4d c re5a tcinrg ecahitledd
+ 5
+PaCrent 4 creating child 6
+Parent 4 creating child 7
+hild 6 created
+Parent 4 creating child 8
+Child 7 created
+Child 8 created
+zombie!
+$ps
+name     pid     state           priority
+init     1       SLEEPING        20
+sh       2       SLEEPING        20
+lab3test         5       RUNNING         20
+ps       9       RUNNING         20
+lab3test         6       RUNNABLE        20
+lab3test         7       RUNNABLE        20
+lab3test         8       RUNNABLE        20
+$ nice 5 18
+process 5 set to 18
+$ ps
+name     pid     state           priority
+init     1       SLEEPING        20
+sh       2       SLEEPING        20
+lab3test         5       RUNNABLE        18
+ps       11      RUNNING         20        
+lab3test         6       RUNNABLE        20
+lab3test         7       RUNNING         20
+lab3test         8       RUNNABLE        20
