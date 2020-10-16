@@ -5,6 +5,7 @@ init     1       SLEEPING        20
 sh       2       SLEEPING        20
 ps       3       RUNNING         20
 
+
 Task 2 output::
 
 $ lab3test 4 &
@@ -37,3 +38,53 @@ ps       11      RUNNING         20
 lab3test         6       RUNNABLE        20
 lab3test         7       RUNNING         20
 lab3test         8       RUNNABLE        20
+
+
+Task 3 output::
+
+$ Parent 10 creating child 11
+Child 11 created
+ps
+name     pid     state           priority
+init     1       SLEEPING        10
+sh       2       SLEEPING        10
+lab3test         11      RUNNABLE        20
+lab3test         10      SLEEPING        10
+lab3test         5       SLEEPING        10
+lab3test         7       SLEEPING        10
+lab3test         8       RUNNABLE        20
+lab3test         9       RUNNING         20
+ps       12      RUNNING         10
+$ ps
+name     pid     state           priority
+init     1       SLEEPING        10
+sh       2       SLEEPING        10
+lab3test         11      RUNNABLE        20
+lab3test         10      SLEEPING        10
+lab3test         5       SLEEPING        10
+lab3test         7       SLEEPING        10
+lab3test         8       RUNNING         20
+lab3test         9       RUNNABLE        20
+ps       13      RUNNING         10
+$ ps
+name     pid     state           priority
+init     1       SLEEPING        10
+sh       2       SLEEPING        10
+lab3test         11      RUNNABLE        20
+lab3test         10      SLEEPING        10
+lab3test         5       SLEEPING        10
+lab3test         7       SLEEPING        10
+lab3test         8       RUNNABLE        20
+lab3test         9       RUNNING         20
+ps       14      RUNNING         10
+$ ps
+name     pid     state           priority
+init     1       SLEEPING        10
+sh       2       SLEEPING        10
+lab3test         11      RUNNABLE        20
+lab3test         10      SLEEPING        10
+lab3test         5       SLEEPING        10
+lab3test         7       SLEEPING        10
+lab3test         8       RUNNABLE        20
+lab3test         9       RUNNING         20
+ps       15      RUNNING         10
