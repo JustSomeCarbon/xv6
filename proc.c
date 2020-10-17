@@ -327,18 +327,32 @@ void
 scheduler(void)
 {
   struct proc *p;
+  struct proc *prioproc;
   struct cpu *c = mycpu();
   c->proc = 0;
   
   for(;;){
     // Enable interrupts on this processor.
     sti();
+    //prioproc = 0;
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
+
+      // look for the highest priority process within process table
+      // but first assign the highest priority to the first found
+      for(prioproc = ptable.proc; prioproc < &ptable.proc[NPROC]; prioproc++){
+        if (prioproc->state != RUNNABLE)
+          continue;
+
+        // check priority of each found process against assigned proc
+        // if it has a higher priority replace the selected proc
+        if (prioproc->nice < p->nice)
+          p = prioproc;
+      }
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
@@ -347,6 +361,7 @@ scheduler(void)
       switchuvm(p);
       p->state = RUNNING;
 
+      // save current registers in cpu->scheduler that points to a struct
       swtch(&(c->scheduler), p->context);
       switchkvm();
 

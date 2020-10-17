@@ -1,9 +1,21 @@
+Time logging::
+Name	Time Started	Time Finished	Task
+Garcia	2:00			3:40			1
+Loraas	9:00			10:10			2
+Loraas	7:00			7:30			3
+Garcia	4:40			6:00			4
+Garcia	2:00			2:20			4
+------------------------------------------
+Total Time: 5:00 hours
+
+
 Task 1 output::
 
 name     pid     state           priority
 init     1       SLEEPING        20
 sh       2       SLEEPING        20
 ps       3       RUNNING         20
+
 
 
 Task 2 output::
@@ -38,6 +50,7 @@ ps       11      RUNNING         20
 lab3test         6       RUNNABLE        20
 lab3test         7       RUNNING         20
 lab3test         8       RUNNABLE        20
+
 
 
 Task 3 output::
@@ -88,3 +101,48 @@ lab3test         7       SLEEPING        10
 lab3test         8       RUNNABLE        20
 lab3test         9       RUNNING         20
 ps       15      RUNNING         10
+
+
+	Over the course of time the processes were running we can see that different
+	lab3test processes obtain the CPU and are listed in the RUNNING state. From this,
+	we can see the round robbin scheduling algorithm at work.
+
+
+Task 5::
+
+Booting from Hard Disk..xv6...
+cpu1: starting 1
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ lab3test &; lab3test &
+$ ParenCt 5 creating child 7
+hild 7 PaCrhecinrlt dea6t  c8r eacrtieenagdt
+ed
+ child 8
+ps
+name     pid     state           priority
+init     1       SLEEPING        20
+sh       2       SLEEPING        20
+lab3test         7       RUNNABLE        20
+lab3test         6       SLEEPING        20
+lab3test         5       SLEEPING        20
+lab3test         8       RUNNING         20
+ps       9       RUNNING         20
+$ nice 7 10
+process 7 set to 10
+$ ps
+name     pid     state           priority
+init     1       SLEEPING        20
+sh       2       SLEEPING        20
+lab3test         7       RUNNING         10
+lab3test         6       SLEEPING        20
+lab3test         5       SLEEPING        20
+lab3test         8       RUNNABLE        20
+ps       11      RUNNING         20
+
+	With the observation above, Four processes are created, two of which are sleeping
+	waiting for the children to finish their execution. At first it is shown that
+	lab3test process with PID 8 was RUNNING, while PID 7 was constantly stuck in RUNNABLE.
+	We then change the priority of PID 7 to 10 and ps again and observe that PID 7 is
+	now in the RUNNING state and PID 8 is in the RUNNABLE state.
