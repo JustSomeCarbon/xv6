@@ -90,9 +90,46 @@ sys_uptime(void)
   return xticks;
 }
 
-// things
+// print current processes to terminal
 int
 sys_cps(void)
 {
 	return cps();
 }
+
+// create a new thread
+int
+sys_thread_create(void)
+{
+    // create variables to store passed information
+    void *fn = 0, *stack = 0, *arg = 0;
+
+    // check for the three arguments and store them within their pointers
+    if (argptr(0, (void *)fn, sizeof(*fn)) < 0)
+        return -1;
+    if (argptr(1, (void *)stack, sizeof(*stack)) < 0)
+        return -1;
+    if (argptr(2, (void *)arg, sizeof(*arg)) < 0)
+        return -1;
+    // call the create thread function
+    return thread_create(fn, stack, arg);
+}
+
+
+// join a child thread with its parent
+int
+sys_thread_join(void)
+{
+    // call the join thread function
+    return thread_join();
+}
+
+
+// exit a thread process
+int
+sys_thread_exit(void)
+{
+    // call the exit thread function
+    return thread_exit();
+}
+

@@ -554,3 +554,181 @@ cps()
 	release(&ptable.lock);
 	return 22;
 }
+
+
+// Create a new thread from the current process running, and
+// return the thread id as an integer.
+int
+thread_create(void (*fn)(void*), void *stack, void *arg)
+{
+    // obtain current process information
+    struct proc *cproc = myproc();
+    // create the new thread
+    struct proc *p;
+
+    // allocate space for the new thread
+    // if not return from the function
+    if (p=allocproc() == 0)
+        return -1
+
+    // set the values of the new thread
+    p->sz = cproc->sz;
+    *p->tf = *cproc->tf;
+    p->parent = cproc;
+    p->pgdir = cproc->pgdir;
+
+    //create the thread stack
+    uint* threadstack = (uint*) stack;
+    threadstack = (uint*)((uint)stack + 4096) - 4;
+    *threadstack = (uint) arg;
+    threadstack = (uint*)((uint)stack-8);
+    *threadstack = (uint)0xFFFFFFFF;
+
+    // set the registers
+    // set point to next function
+    p->tf->eip = (int)fn;
+    // clear eax register for child
+    p->tf->eax = 0;
+    // set stack pointer
+    p->tf->esp = (int)threadstack;
+    
+
+    //copy over system information from process to thread
+    safestrcpy(p->name, cproc->name, sizeof(cproc->name));
+
+    // copy the open files over to the new thread
+    for (int i=0; i<NOFILE; i++) {
+        // look for open files within the current process
+        // if found, copy them over to the new thread
+        if (cproc->ofile[i])
+            p->ofile[i] = filedup(cproc->ofile[i]);
+    }
+    // change the working directory of thread to current
+    p->cwd = idup(cproc->cwd);
+
+    // lock system to apply changes to thread state
+    // and change the state of the new thread
+    acquire(&ptable.lock);
+    p->state = RUNNABLE;
+    release(&ptable.lock);
+    // set the kernel flag to signify the new process
+    // is a kernel thread
+    p->kernelflag = 1;
+
+    // return the thread id
+    return p->pid;
+}
+
+
+//thread joining
+int
+thread_join(void)
+{
+    // obtain the current process
+    struct proc* cproc = myproc();
+    // create a new blank process
+    struct proc* p;
+    // flag set if the process has children threads
+    int childthread = 0;
+
+    // acquire the lock so the function can
+    // work with the processes within the
+    // process table
+    acquire(&ptable.lock);
+    for(;;) {
+        // look through the process table for threads
+        for (p=ptable.proc; p<&ptable.proc[NPROC]; p++) {
+            // check if the process is a thread and is a zombie
+            if (p->pgdir == cproc->pgdir && p->state == ZOMBIE) {
+                // store the process id
+                pid = p->pid;
+                // change the information state of the process
+                p->name[0] = 0;
+                p->pid = 0;
+                p->state = UNUSED;
+                p->killed = 0;
+                p->parent = 0;
+                release(&ptable.lock);
+                return pid;
+            }
+
+            // check if the current process is not a thread of current process
+            // and if the current process is a thread
+            if (p->parent != cproc && p->childthread == 1) {
+                // continue from the for loop
+                continue;
+            }
+            // if not set the child thread flag
+            childthread = 1;
+        }
+    
+        // If the current process is found to have no children or the process was killed
+        //return from the function as -1
+        if (cproc->killed != 0 && !(childthread)) {
+            // release and return
+            release(&ptable.lock);
+            return -1;
+        }
+        else {
+            sleep(cproc, &ptable.lock);
+        }
+
+    } // end of forever loop
+}
+
+
+// similar to exit, except for thread processes
+int
+thread_exit(void)
+{
+    // obtain the current process
+    struct proc *cproc = myproc();
+
+    // check that the current process is initproc
+    // if it is, then panic
+    // similar to exit
+    if (cproc == initproc)
+        panic("init exiting.");
+
+    // create new blank process
+    struct proc *p;
+
+    // look for open file, if one is found
+    for (int i=0; i<NOFILE; i++) {
+        if (cproc->ofile[i]) {
+            // close the file
+            fileclose(cproc->ofile[i]);
+            // set the open file to 0
+            cproc->ofile[i] = 0;
+        }
+    }
+
+    // change the current working directory
+    begin_op();
+    iput(cproc->cwd);
+    end_op();
+    // reset the working directory
+    cproc->cwd = 0;
+
+    acquire(&ptable.lock);
+    // wake up the waiting parent process
+    wakeup1(cproc->parent);
+    // check for a thread
+    for (p=ptable.proc; p<&ptable.proc[NPROC]; p++) {
+        if (cproc == p->parent) {
+            // set the parent
+            p->parent = initproc;
+            // check if the thread is a zombie
+            // if so wake the parent
+            if (p->state == ZOMBIE)
+                wakeup1(initproc);
+        }
+    }
+    // thread was not found, panic and exit
+    // set the current process state to zombie
+    cproc->state = ZOMBIE;
+    sched();
+    panic("zombie exit.");
+    
+}
+
