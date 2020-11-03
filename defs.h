@@ -121,7 +121,7 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int             cps(void);
-int             thread_create(void (*fn)(*void), void *stack, void *arg);
+int             thread_create(void (*fn)(void*), void *stack, void *arg);
 int             thread_join(void);
 int             thread_exit(void);
 

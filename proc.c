@@ -568,8 +568,8 @@ thread_create(void (*fn)(void*), void *stack, void *arg)
 
     // allocate space for the new thread
     // if not return from the function
-    if (p=allocproc() == 0)
-        return -1
+    if ((p=allocproc()) == 0)
+        return -1;
 
     // set the values of the new thread
     p->sz = cproc->sz;
@@ -641,7 +641,7 @@ thread_join(void)
             // check if the process is a thread and is a zombie
             if (p->pgdir == cproc->pgdir && p->state == ZOMBIE) {
                 // store the process id
-                pid = p->pid;
+                int pid = p->pid;
                 // change the information state of the process
                 p->name[0] = 0;
                 p->pid = 0;
@@ -654,7 +654,7 @@ thread_join(void)
 
             // check if the current process is not a thread of current process
             // and if the current process is a thread
-            if (p->parent != cproc && p->childthread == 1) {
+            if (p->parent != cproc && childthread == 1) {
                 // continue from the for loop
                 continue;
             }
