@@ -36,7 +36,7 @@ int lock_acquire(lock_t* lk)
 int lock_release(lock_t* lk)
 {
     // exchange the current lock_use value with 0
-    xcchg(&lk->lock_use, 0);
+    xchg(&lk->lock_use, 0);
     // the lock is now free to use, return
     return 0;
 }
