@@ -179,6 +179,8 @@ UPROGS=\
 	_sh\
 	_stressfs\
     _threads_nosync\
+    _threads_sync\
+    _tlock\
 	_usertests\
 	_wc\
 	_ps\
@@ -252,7 +254,7 @@ qemu-nox-gdb: fs.img xv6.img .gdbinit
 EXTRA=\
 	mkfs.c ulib.c user.h cat.c echo.c forktest.c grep.c kill.c\
 	ln.c ls.c mkdir.c rm.c stressfs.c usertests.c wc.c ps.c zombie.c\
-	printf.c umalloc.c threads_nosync.c\
+	printf.c umalloc.c threads_nosync.c threads_sync.c tlock.c\
 	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
 	.gdbinit.tmpl gdbutil\
 

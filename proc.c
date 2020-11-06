@@ -571,28 +571,36 @@ thread_create(void (*fn)(void*), void *stack, void *arg)
     if ((p=allocproc()) == 0)
         return -1;
 
+    // create the thread stack
+    uint* threadstack = (uint*)stack;
+    threadstack = (uint*)((uint)stack + 4096 - 4);
+    // point to top of stack and store argument
+    *threadstack = (uint)arg;
+    threadstack = (uint*)((uint)stack - 8);
+    *threadstack = (uint)0xFFFFFFFF;
+
+    // set the beginning of the stack
+    p->stack = stack;
     // set the values of the new thread
     p->sz = cproc->sz;
-    *p->tf = *cproc->tf;
     p->parent = cproc;
     p->pgdir = cproc->pgdir;
 
-    //create the thread stack
-    uint* threadstack = (uint*) stack;
-    threadstack = (uint*)((uint)stack + 4096) - 4;
-    *threadstack = (uint) arg;
-    threadstack = (uint*)((uint)stack-8);
-    *threadstack = (uint)0xFFFFFFFF;
-
+    // copt the process trapframe for the thread
+    *p->tf = *cproc->tf;
     // set the registers
-    // set point to next function
+    // set point to next function call
     p->tf->eip = (int)fn;
-    // clear eax register for child
+    // clear the eax register for child process
     p->tf->eax = 0;
-    // set stack pointer
+    // set the stack pointer
     p->tf->esp = (int)threadstack;
+    // set that the process is a kernel thread
+    p->kernelflag = 1;
     
 
+    // change the working directory of thread to current
+    p->cwd = idup(cproc->cwd);
     //copy over system information from process to thread
     safestrcpy(p->name, cproc->name, sizeof(cproc->name));
 
@@ -603,17 +611,12 @@ thread_create(void (*fn)(void*), void *stack, void *arg)
         if (cproc->ofile[i])
             p->ofile[i] = filedup(cproc->ofile[i]);
     }
-    // change the working directory of thread to current
-    p->cwd = idup(cproc->cwd);
 
     // lock system to apply changes to thread state
     // and change the state of the new thread
     acquire(&ptable.lock);
     p->state = RUNNABLE;
     release(&ptable.lock);
-    // set the kernel flag to signify the new process
-    // is a kernel thread
-    p->kernelflag = 1;
 
     // return the thread id
     return p->pid;
