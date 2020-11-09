@@ -102,10 +102,7 @@ int
 sys_thread_create(void)
 {
     // create variables to store passed information
-    //void *fn = 0, *stack = 0, *arg = 0;
-    void* fn = 0;
-    void* stack = 0;
-    void* arg = 0;
+    void *fn = 0, *stack = 0, *arg = 0;
 
     // check for the three arguments and store them within their pointers
     if (argptr(0, (void *)fn, sizeof(*fn)) < 0)
@@ -135,7 +132,6 @@ sys_thread_exit(void)
     // call the exit thread function
     return thread_exit();
 }
-
 
 
 // initialize the thread lock

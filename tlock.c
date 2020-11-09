@@ -1,6 +1,7 @@
-#include "x86.h"
-#include "defs.h"
 #include "types.h"
+#include "defs.h"
+#include "x86.h"
+
 
 // initialize the lock for the threads
 // there should only be one lock within the system

@@ -111,6 +111,7 @@ found:
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
+  p->kernelflag = 0;
 
   return p;
 }
@@ -576,6 +577,7 @@ thread_create(void (*fn)(void*), void *stack, void *arg)
     threadstack = (uint*)((uint)stack + 4096 - 4);
     // point to top of stack and store argument
     *threadstack = (uint)arg;
+    // then move pointer 8 bytes
     threadstack = (uint*)((uint)stack - 8);
     *threadstack = (uint)0xFFFFFFFF;
 
@@ -586,15 +588,15 @@ thread_create(void (*fn)(void*), void *stack, void *arg)
     p->parent = cproc;
     p->pgdir = cproc->pgdir;
 
-    // copt the process trapframe for the thread
+    // copy the process trapframe for the thread
     *p->tf = *cproc->tf;
     // set the registers
     // set point to next function call
     p->tf->eip = (int)fn;
-    // clear the eax register for child process
-    p->tf->eax = 0;
     // set the stack pointer
     p->tf->esp = (int)threadstack;
+    // clear the eax register for child process
+    p->tf->eax = 0;
     // set that the process is a kernel thread
     p->kernelflag = 1;
     
@@ -608,8 +610,9 @@ thread_create(void (*fn)(void*), void *stack, void *arg)
     for (int i=0; i<NOFILE; i++) {
         // look for open files within the current process
         // if found, copy them over to the new thread
-        if (cproc->ofile[i])
+        if (cproc->ofile[i]) {
             p->ofile[i] = filedup(cproc->ofile[i]);
+        }
     }
 
     // lock system to apply changes to thread state
@@ -623,7 +626,7 @@ thread_create(void (*fn)(void*), void *stack, void *arg)
 }
 
 
-//thread joining
+// Join a thread with the parent process, if no threads are found exit
 int
 thread_join(void)
 {
@@ -631,16 +634,16 @@ thread_join(void)
     struct proc* cproc = myproc();
     // create a new blank process
     struct proc* p;
-    // flag set if the process has children threads
-    int childthread = 0;
 
     // acquire the lock so the function can
     // work with the processes within the
     // process table
     acquire(&ptable.lock);
     for(;;) {
+
         // look through the process table for threads
         for (p=ptable.proc; p<&ptable.proc[NPROC]; p++) {
+
             // check if the process is a thread and is a zombie
             if (p->pgdir == cproc->pgdir && p->state == ZOMBIE) {
                 // store the process id
@@ -655,26 +658,21 @@ thread_join(void)
                 return pid;
             }
 
-            // check if the current process is not a thread of current process
-            // and if the current process is a thread
-            if (p->parent != cproc && childthread == 1) {
+            if ((p->kernelflag == 1) && (p->parent != cproc)) {
                 // continue from the for loop
                 continue;
             }
-            // if not set the child thread flag
-            childthread = 1;
         }
     
         // If the current process is found to have no children or the process was killed
-        //return from the function as -1
-        if (cproc->killed != 0 && !(childthread)) {
+        // return from the function as -1
+        if (cproc->killed != 0) {
             // release and return
             release(&ptable.lock);
             return -1;
         }
-        else {
-            sleep(cproc, &ptable.lock);
-        }
+        // let the parent process sleep untill the operation completes
+        sleep(cproc, &ptable.lock);
 
     } // end of forever loop
 }
