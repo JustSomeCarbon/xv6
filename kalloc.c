@@ -95,6 +95,7 @@ kfree(char *v)
   // single page, if there are, reduce the number by 1
   // otherwise free the page space.
   if (page_ref_count > 1) {
+    // multiple references on page,
     // subtract a reference from the page
     kmem.page_ref[V2P(v)]--;
 
@@ -127,7 +128,11 @@ kalloc(void)
   // aqcuire the lock for the system
   if(kmem.use_lock)
     acquire(&kmem.lock);
+  // find the next free page available
   r = kmem.freelist;
+
+  // if a free page is found allocate it
+  // set page values
   if(r) {
     // add a reference for the page
     // remove a page from free pages
@@ -159,4 +164,73 @@ int getNumFreePages() {
     // return the free pages
     return free;
 }
+
+
+/* -- helper functions -- */
+
+// Checks if the given page address is valid
+int
+check_valid_ref(int page)
+{
+    // check that the given page is valid
+    // the page must be within allowed memory
+    // to be valid
+    // return 1 if it is, 0 otherwise
+    return ((page < PHYSTOP) || ((uint)V2P(end) > page));
+}
+
+
+// Add a reference to a given page
+void
+add_page_ref(int page)
+{
+    // check page is valid
+    if (!check_valid_ref(page))
+        panic("add_page_ref");
+
+    // acquire the lock
+    if (kmem.use_lock)
+        acquire(&kmem.lock);
+
+    // add a reference for the given page
+    kmem.page_ref[page] += 1;
+
+    // release lock
+    if (kmem.use_lock)
+        release(&kmem.lock);
+}
+
+
+// Subtract a page reference from given page if possible
+void
+sub_page_ref(int page)
+{
+    // check page is valid
+    if (!check_valid_ref(page))
+        panic("sub_page_ref");
+
+    // acquire the lock
+    if (kmem.use_lock)
+        acquire(&kmem.lock);
+
+    int ref = kmem.page_ref[page];
+
+    // check that a reference can be subtracted
+    // if not, panic
+    if (ref == 0) {
+        panic("sub_page_ref");
+    }
+    if (ref >= 1) {
+        // subtract 1 from page references
+        kmem.page_ref[page] -= 1;
+    }
+
+    // release lock
+    if (kmem.use_lock)
+        release(&kmem.lock);
+}
+
+
+
+
 
