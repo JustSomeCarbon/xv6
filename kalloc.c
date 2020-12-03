@@ -28,6 +28,11 @@ struct {
   int page_ref[PHYSTOP];
 } kmem;
 
+void add_page_ref(int);
+void sub_page_ref(int);
+int check_valid_ref(int);
+
+
 // Initialization happens in two phases.
 // 1. main() calls kinit1() while still using entrypgdir to place just
 // the pages mapped by entrypgdir on free list.
@@ -58,7 +63,7 @@ freerange(void *vstart, void *vend)
   p = (char*)PGROUNDUP((uint)vstart);
 
   // for each page from start address given to stop address
-  // free the pages
+  // free the pages and initialize page references
   for(; p + PGSIZE <= (char*)vend; p += PGSIZE) {
     // initialize the number of page references to 0
     // change ciretual address to physical address
@@ -81,19 +86,61 @@ kfree(char *v)
   if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
     panic("kfree");
 
-  // Fill with junk to catch dangling refs.
-  //memset(v, 1, PGSIZE);
-
   // initialize the lock
+  /*
   if (kmem.use_lock) {
     acquire(&kmem.lock);
   }
+  */
 
   int page_ref_count = kmem.page_ref[V2P(v)];
 
   // check if there are more than one references on a
   // single page, if there are, reduce the number by 1
   // otherwise free the page space.
+  if (page_ref_count == 0 ) {
+    //get lock
+    if (kmem.use_lock)
+        acquire(&kmem.lock);
+
+    // there is no reference
+    memset(v, 1, PGSIZE);
+    r = (struct run *)v;
+    r->next = kmem.freelist;
+    kmem.freelist = r;
+
+    // release lock
+    if (kmem.use_lock)
+        release(&kmem.lock);
+  }
+
+  if (page_ref_count == 1) {
+    // subtract reference on page
+    // add a free page
+    sub_page_ref(V2P(v));
+
+    // acquie lock
+    if (kmem.use_lock)
+        acquire(&kmem.lock);
+
+    kmem.free_pages++;
+    memset(v, 1, PGSIZE);
+    r = (struct run *)v;
+    r->next = kmem.freelist;
+    kmem.freelist = r;
+
+    // release lock
+    if (kmem.use_lock)
+        release(&kmem.lock);
+  }
+
+  if (page_ref_count > 1) {
+    // subtract from reference count, but
+    // dont add to free pages
+    sub_page_ref(V2P(v));
+  }
+
+  /*
   if (page_ref_count > 1) {
     // multiple references on page,
     // subtract a reference from the page
@@ -115,6 +162,7 @@ kfree(char *v)
   // release the lock
   if(kmem.use_lock)
     release(&kmem.lock);
+  */
 }
 
 // Allocate one 4096-byte page of physical memory.
@@ -126,8 +174,11 @@ kalloc(void)
   struct run *r;
 
   // aqcuire the lock for the system
+  /*
   if(kmem.use_lock)
     acquire(&kmem.lock);
+  */
+
   // find the next free page available
   r = kmem.freelist;
 
@@ -136,13 +187,21 @@ kalloc(void)
   if(r) {
     // add a reference for the page
     // remove a page from free pages
+    add_page_ref(V2P((char *)r));
+    // acquire lock
+    if (kmem.use_lock)
+        acquire(&kmem.lock);
+
     kmem.free_pages--;
-    kmem.page_ref[V2P((char *)r)]++;
+    //kmem.page_ref[V2P((char *)r)]++;
+    // set the freelist to the next page
     kmem.freelist = r->next;
   }
-  // release the lock for the system
+
+  // release the lock
   if(kmem.use_lock)
     release(&kmem.lock);
+
   return (char*)r;
 }
 
