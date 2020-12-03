@@ -68,6 +68,7 @@ char*           kalloc(void);
 void            kfree(char*);
 void            kinit1(void*, void*);
 void            kinit2(void*, void*);
+int             getNumFreePages(void);
 
 // kbd.c
 void            kbdintr(void);
@@ -121,9 +122,6 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int             cps(void);
-int             thread_create(void (*fn)(void*), void*, void*);
-int             thread_join(void);
-int             thread_exit(void);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
@@ -189,11 +187,6 @@ void            switchuvm(struct proc*);
 void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
-
-// tlock.c
-int lock_init(lock_t*);
-int lock_acquire(lock_t*);
-int lock_release(lock_t*);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

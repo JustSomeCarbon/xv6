@@ -21,6 +21,11 @@ struct {
   struct spinlock lock;
   int use_lock;
   struct run *freelist;
+
+  // Keep track of the free pages in table
+  int free_pages;
+  // keep track of refferences on the each page
+  int page_ref[PHYSTOP];
 } kmem;
 
 // Initialization happens in two phases.
@@ -33,6 +38,9 @@ kinit1(void *vstart, void *vend)
 {
   initlock(&kmem.lock, "kmem");
   kmem.use_lock = 0;
+  // initialize number of free pages to 0
+  // initially, we will count up later.
+  kmem.free_pages = 0;
   freerange(vstart, vend);
 }
 
@@ -48,9 +56,18 @@ freerange(void *vstart, void *vend)
 {
   char *p;
   p = (char*)PGROUNDUP((uint)vstart);
-  for(; p + PGSIZE <= (char*)vend; p += PGSIZE)
+
+  // for each page from start address given to stop address
+  // free the pages
+  for(; p + PGSIZE <= (char*)vend; p += PGSIZE) {
+    // initialize the number of page references to 0
+    // change ciretual address to physical address
+    kmem.page_ref[V2P(p)] = 0;
     kfree(p);
+  }
 }
+
+
 //PAGEBREAK: 21
 // Free the page of physical memory pointed at by v,
 // which normally should have been returned by a
@@ -65,13 +82,36 @@ kfree(char *v)
     panic("kfree");
 
   // Fill with junk to catch dangling refs.
-  memset(v, 1, PGSIZE);
+  //memset(v, 1, PGSIZE);
 
-  if(kmem.use_lock)
+  // initialize the lock
+  if (kmem.use_lock) {
     acquire(&kmem.lock);
-  r = (struct run*)v;
-  r->next = kmem.freelist;
-  kmem.freelist = r;
+  }
+
+  int page_ref_count = kmem.page_ref[V2P(v)];
+
+  // check if there are more than one references on a
+  // single page, if there are, reduce the number by 1
+  // otherwise free the page space.
+  if (page_ref_count > 1) {
+    // subtract a reference from the page
+    kmem.page_ref[V2P(v)]--;
+
+  } else {
+    // remove the remaining reference from the page and
+    // add another free page to the memory struct
+    kmem.page_ref[V2P(v)]--;
+    kmem.free_pages++;
+    // Fill with junk to catch dangling refs
+    memset(v, 1, PGSIZE);
+    //operations on run struct 
+    r = (struct run*)v;
+    r->next = kmem.freelist;
+    kmem.freelist = r;
+  }
+
+  // release the lock
   if(kmem.use_lock)
     release(&kmem.lock);
 }
@@ -84,13 +124,39 @@ kalloc(void)
 {
   struct run *r;
 
+  // aqcuire the lock for the system
   if(kmem.use_lock)
     acquire(&kmem.lock);
   r = kmem.freelist;
-  if(r)
+  if(r) {
+    // add a reference for the page
+    // remove a page from free pages
+    kmem.free_pages--;
+    kmem.page_ref[V2P((char *)r)]++;
     kmem.freelist = r->next;
+  }
+  // release the lock for the system
   if(kmem.use_lock)
     release(&kmem.lock);
   return (char*)r;
+}
+
+/* -- System Call -- */
+
+// getNumFreePages returns the number of free pages
+// within the page table
+int getNumFreePages() {
+    // first obtain the lock
+    if (kmem.use_lock) {
+        acquire(&kmem.lock);
+    }
+    // obtain the free pages
+    int free = kmem.free_pages;
+    //return the lock
+    if (kmem.use_lock) {
+        release(&kmem.lock);
+    }
+    // return the free pages
+    return free;
 }
 

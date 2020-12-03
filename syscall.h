@@ -21,9 +21,4 @@
 #define SYS_mkdir  20
 #define SYS_close  21
 #define SYS_cps    22
-#define SYS_thread_create 23
-#define SYS_thread_join 24
-#define SYS_thread_exit 25
-#define SYS_lock_init 26
-#define SYS_lock_acquire 27
-#define SYS_lock_release 28
+#define SYS_getNumFreePages 23

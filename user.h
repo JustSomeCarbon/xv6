@@ -24,12 +24,7 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int cps(void);
-int thread_create(void (*fd)(void *), void*, void*);
-int thread_join(void);
-int thread_exit(void);
-int lock_init(lock_t*);
-int lock_acquire(lock_t*);
-int lock_release(lock_t*);
+int getNumFreePages(void);
 
 // ulib.c
 int stat(const char*, struct stat*);
