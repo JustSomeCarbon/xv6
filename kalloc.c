@@ -28,10 +28,6 @@ struct {
   int page_ref[PHYSTOP];
 } kmem;
 
-void add_page_ref(int);
-void sub_page_ref(int);
-int check_valid_ref(int);
-
 
 // Initialization happens in two phases.
 // 1. main() calls kinit1() while still using entrypgdir to place just

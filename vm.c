@@ -392,3 +392,98 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 //PAGEBREAK!
 // Blank page.
 
+
+pde_t*
+copyuvm_cow(pde_t *pgdir, uint sz)
+{
+        uint flg, p, i;
+        pde_t *x;
+        pte_t *pte;
+
+        if((x = setupkvm()) == 0){
+                return 0;
+        }
+
+        for(i = 0; i < sz; i += PGSIZE){
+                if(( pte = walkpgdir(pgdir, (void *) i, 0)) == 0){
+                        panic("copyuvm: pte should exsits");
+                }
+
+                if(!(*pte & PTE_P)){
+                        panic("copyuvm: page not present");
+                }
+
+
+                *pte &= ~PTE_W;
+                p = PTE_ADDR(*pte);
+                flg = PTE_FLAGS(*pte);
+
+                if(mappages(x, (void *)i, PGSIZE, p, flg) < 0){
+                        goto nope;
+                }
+
+                add_page_ref(p);
+        }
+
+        lcr3(V2P(pgdir));
+        return x;
+
+nope:
+        freevm(x);
+        return 0;
+}
+
+
+
+void
+handle_pgflt()
+{
+        struct proc *proc;
+        pte_t *pte;
+        char *mem;
+        int v;
+        int p;
+        int r;
+
+        proc = myproc();
+        v = rcr2();
+
+        if((pte = walkpgdir(proc->pgdir, (void *)v, 0)) == 0 || !(*pte & PTE_U) || v >= KERNBASE || !(*pte & PTE_P)){
+                cprintf("addr illegal killed %s pid %d\n", proc-> name, proc->pid);
+                proc->killed = 1;
+                return;
+        }
+
+        if(proc == 0){
+                panic("page fault");
+        }
+
+        if(*pte & PTE_W){
+                panic("writable page");
+        }
+
+        p = PTE_ADDR(*pte);
+        r = check_valid_ref(p);
+
+        if(r == 1){
+                *pte |= PTE_W;
+        } else if(r > 1){
+
+                mem = kalloc();
+
+                if(mem == 0){
+                        cprintf("no more memory killed %s pid %d\n", proc->name, proc->pid);
+                        proc->killed = 1;
+                        return;
+                }
+
+                memmove(mem, (char*)P2V(p), PGSIZE);
+                sub_page_ref(p);
+                *pte = V2P(mem) | PTE_P | PTE_U | PTE_W;
+        } else {
+                panic("refernce count invalid");
+        }
+
+        lcr3(V2P(proc->pgdir));
+
+}
