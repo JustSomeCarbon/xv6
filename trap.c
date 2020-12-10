@@ -45,12 +45,14 @@ trap(struct trapframe *tf)
       exit();
     return;
   }
-
-  switch(tf->trapno){
-  case T_PGFLT:
+  // check for a page fault
+  if (tf->trapno == T_PGFLT) {
     myproc()->tf = tf;
     handle_pgflt();
-    break;
+    return;
+  }
+
+  switch(tf->trapno) {
   case T_IRQ0 + IRQ_TIMER:
     if(cpuid() == 0){
       acquire(&tickslock);

@@ -82,14 +82,7 @@ kfree(char *v)
   if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
     panic("kfree");
 
-  // initialize the lock
-  /*
-  if (kmem.use_lock) {
-    acquire(&kmem.lock);
-  }
-  */
-
-  int page_ref_count = kmem.page_ref[V2P(v)];
+  int page_ref_count = get_page_ref(V2P(v));
 
   // check if there are more than one references on a
   // single page, if there are, reduce the number by 1
@@ -183,13 +176,15 @@ kalloc(void)
   if(r) {
     // add a reference for the page
     // remove a page from free pages
-    add_page_ref(V2P((char *)r));
+    //add_page_ref(V2P((char *)r));
     // acquire lock
     if (kmem.use_lock)
         acquire(&kmem.lock);
 
+    // add to free page counter
     kmem.free_pages--;
     //kmem.page_ref[V2P((char *)r)]++;
+    kmem.page_ref[V2P((char *)r)] = 1;
     // set the freelist to the next page
     kmem.freelist = r->next;
   }
@@ -286,6 +281,21 @@ sub_page_ref(int page)
 }
 
 
+// Return the total number of page references on a page
+int
+get_page_ref(int page)
+{
+    // acquire the lock
+    if (kmem.use_lock)
+        acquire(&kmem.lock);
 
+    // acquire the amount of references for given page
+    int ref = kmem.page_ref[page];
 
+    // release the lock
+    if (kmem.use_lock)
+        release(&kmem.lock);
+
+    return ref;
+}
 
